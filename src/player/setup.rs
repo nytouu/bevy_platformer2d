@@ -5,6 +5,8 @@ use bevy_spritesheet_animation::prelude::*;
 use super::Direction;
 use super::*;
 
+const ANIMATION_SPEED: u32 = 80;
+
 pub fn setup_player(
     mut commands: Commands,
     mut library: ResMut<SpritesheetLibrary>,
@@ -30,6 +32,7 @@ pub fn setup_player(
     let run_anim_id = library.new_animation(|animation| {
         animation
             .add_stage(run_clip_id.into())
+            .set_duration(AnimationDuration::PerFrame(ANIMATION_SPEED))
             .set_repeat(AnimationRepeat::Loop);
     });
 
@@ -43,6 +46,7 @@ pub fn setup_player(
     let idle_anim_id = library.new_animation(|animation| {
         animation
             .add_stage(idle_clip_id.into())
+            .set_duration(AnimationDuration::PerFrame(ANIMATION_SPEED))
             .set_repeat(AnimationRepeat::Loop);
     });
 
@@ -56,6 +60,7 @@ pub fn setup_player(
     let climb_anim_id = library.new_animation(|animation| {
         animation
             .add_stage(climb_clip_id.into())
+            .set_duration(AnimationDuration::PerFrame(ANIMATION_SPEED))
             .set_repeat(AnimationRepeat::Loop);
     });
 
@@ -71,6 +76,7 @@ pub fn setup_player(
     let air_anim_id = library.new_animation(|animation| {
         animation
             .add_stage(air_clip_id.into())
+            .set_duration(AnimationDuration::PerFrame(ANIMATION_SPEED))
             .set_repeat(AnimationRepeat::Loop);
     });
 
@@ -84,6 +90,7 @@ pub fn setup_player(
     let jump_anim_id = library.new_animation(|animation| {
         animation
             .add_stage(jump_clip_id.into())
+            .set_duration(AnimationDuration::PerFrame(ANIMATION_SPEED))
             .set_repeat(AnimationRepeat::Cycles(1));
     });
 
@@ -97,6 +104,7 @@ pub fn setup_player(
     let land_anim_id = library.new_animation(|animation| {
         animation
             .add_stage(land_clip_id.into())
+            .set_duration(AnimationDuration::PerFrame(ANIMATION_SPEED))
             .set_repeat(AnimationRepeat::Cycles(1));
     });
 
@@ -110,6 +118,7 @@ pub fn setup_player(
     let wall_anim_id = library.new_animation(|animation| {
         animation
             .add_stage(wall_clip_id.into())
+            .set_duration(AnimationDuration::PerFrame(ANIMATION_SPEED))
             .set_repeat(AnimationRepeat::Cycles(1));
     });
 
@@ -123,6 +132,7 @@ pub fn setup_player(
     let dash_anim_id = library.new_animation(|animation| {
         animation
             .add_stage(dash_clip_id.into())
+            .set_duration(AnimationDuration::PerFrame(ANIMATION_SPEED))
             .set_repeat(AnimationRepeat::Cycles(1));
     });
 
@@ -143,6 +153,7 @@ pub fn setup_player(
             max_jump_height: 50.0,
             jump_force: 200.0,
         },
+        PlayerState::Idle,
         SpritesheetAnimation::from_id(idle_anim_id),
         Collider::capsule_y(4.0, 4.0),
         Damping {

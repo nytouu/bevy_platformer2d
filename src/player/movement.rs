@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use bevy_rapier2d::na::Vector2;
 use bevy_rapier2d::prelude::*;
 
 use super::Direction;
@@ -13,9 +12,20 @@ pub fn strafe(
     gamepads: Res<Gamepads>,
     button_inputs: Res<ButtonInput<GamepadButton>>,
     axes: Res<Axis<GamepadAxis>>,
-    mut query: Query<(&mut KinematicCharacterController, &Player)>,
+    mut commands: Commands,
+    mut query: Query<(
+        Entity,
+        &mut KinematicCharacterController,
+        &KinematicCharacterControllerOutput,
+        &Player,
+        &PlayerState,
+    )>,
 ) {
-    let (mut controller, player) = query.single_mut();
+    if query.is_empty() {
+        return;
+    }
+
+    let (entity, mut controller, output, player, state) = query.single_mut();
 
     let mut movement = Vec2::new(0.0, 0.0);
 
@@ -45,9 +55,25 @@ pub fn strafe(
         }
     }
 
+    if output.grounded {
+        if movement == Vec2::ZERO {
+            commands.entity(entity).insert(PlayerState::Idle);
+        } else {
+            commands.entity(entity).insert(PlayerState::Run);
+        }
+    }
+
+    let air_friction = 1.0;
+    // let air_friction = if output.grounded { 1.0 } else { 3.0 };
+
     match controller.translation {
-        Some(vec) => controller.translation = Some(Vec2::new(movement.x, vec.y)), // update if it already exists
-        None => controller.translation = Some(Vec2::new(movement.x, 0.0)),
+        Some(vec) => {
+            controller.translation = Some(Vec2::new(movement.x / air_friction, vec.y));
+            // update if it already exists
+        }
+        None => {
+            controller.translation = Some(Vec2::new(movement.x / air_friction, 0.0));
+        }
     }
 }
 
@@ -68,13 +94,19 @@ pub fn jump(
     let (player, output) = query.single();
 
     if input.any_pressed([KeyCode::KeyW, KeyCode::ArrowUp, KeyCode::Space]) && output.grounded {
-        commands.entity(player).insert(Jump(0.0));
+        commands
+            .entity(player)
+            .insert(Jump(0.0))
+            .insert(PlayerState::Jump);
     } else {
         for gamepad in gamepads.iter() {
             if (button_inputs.just_pressed(GamepadButton::new(gamepad, GamepadButtonType::South)))
                 && output.grounded
             {
-                commands.entity(player).insert(Jump(0.0));
+                commands
+                    .entity(player)
+                    .insert(Jump(0.0))
+                    .insert(PlayerState::Jump);
             };
         }
     }

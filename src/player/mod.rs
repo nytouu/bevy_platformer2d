@@ -1,13 +1,15 @@
 use bevy::prelude::*;
 
+mod animation;
 mod movement;
 mod setup;
 
+use animation::*;
 use movement::*;
 use setup::*;
 
 #[derive(Component)]
-struct Player {
+pub struct Player {
     speed: f32,
     max_jump_height: f32,
     jump_force: f32,
@@ -20,6 +22,18 @@ struct Jump(f32);
 enum Direction {
     Right,
     Left,
+}
+
+#[derive(Component)]
+enum PlayerState {
+    Idle,
+    Run,
+    Dash,
+    Jump,
+    Air,
+    Land,
+    Climb,
+    Wall,
 }
 
 pub struct PlayerPlugin;
@@ -35,6 +49,9 @@ impl Plugin for PlayerPlugin {
                 fall,
                 update_direction,
                 update_sprite_direction,
+                update_animation,
+                air,
+                land,
             )
                 .chain(),
         );
