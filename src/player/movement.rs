@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
+use bevy_spritesheet_animation::prelude::*;
 
 use super::Direction;
 use super::*;
@@ -18,14 +19,15 @@ pub fn strafe(
         &mut KinematicCharacterController,
         &KinematicCharacterControllerOutput,
         &Player,
-        &PlayerState,
+        &SpritesheetAnimation,
     )>,
+    library: Res<SpritesheetLibrary>,
 ) {
     if query.is_empty() {
         return;
     }
 
-    let (entity, mut controller, output, player, state) = query.single_mut();
+    let (entity, mut controller, output, player, animation) = query.single_mut();
 
     let mut movement = Vec2::new(0.0, 0.0);
 
@@ -56,10 +58,16 @@ pub fn strafe(
     }
 
     if output.grounded {
+        let land = library.animation_with_name("player_land").unwrap();
+
         if movement == Vec2::ZERO {
-            commands.entity(entity).insert(PlayerState::Idle);
+            if animation.animation_id != land {
+                commands.entity(entity).insert(PlayerState::Idle);
+            }
         } else {
-            commands.entity(entity).insert(PlayerState::Run);
+            if animation.animation_id != land {
+                commands.entity(entity).insert(PlayerState::Run);
+            }
         }
     }
 

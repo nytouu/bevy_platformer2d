@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_rapier2d::prelude::*;
 use bevy_spritesheet_animation::prelude::*;
 
 use super::*;
@@ -57,9 +58,9 @@ pub fn update_animation(
     }
 }
 
-pub fn land(
+pub fn land_to_idle(
     mut commands: Commands,
-    mut query: Query<(Entity, &mut SpritesheetAnimation, &PlayerState)>,
+    query: Query<(Entity, &mut SpritesheetAnimation)>,
     library: Res<SpritesheetLibrary>,
     mut events: EventReader<AnimationEvent>,
 ) {
@@ -67,7 +68,7 @@ pub fn land(
         return;
     }
 
-    let (entity, mut animation, state) = query.single_mut();
+    let (entity, animation) = query.single();
 
     let land = library.animation_with_name("player_land").unwrap();
     for event in events.read() {
@@ -82,9 +83,9 @@ pub fn land(
     }
 }
 
-pub fn air(
+pub fn jump_to_air(
     mut commands: Commands,
-    mut query: Query<(Entity, &mut SpritesheetAnimation, &PlayerState)>,
+    query: Query<(Entity, &SpritesheetAnimation)>,
     library: Res<SpritesheetLibrary>,
     mut events: EventReader<AnimationEvent>,
 ) {
@@ -92,7 +93,7 @@ pub fn air(
         return;
     }
 
-    let (entity, mut animation, state) = query.single_mut();
+    let (entity, animation) = query.single();
 
     let jump = library.animation_with_name("player_jump").unwrap();
     for event in events.read() {
@@ -104,5 +105,28 @@ pub fn air(
             }
             _ => {}
         }
+    }
+}
+
+pub fn land(
+    mut commands: Commands,
+    query: Query<(
+        Entity,
+        &SpritesheetAnimation,
+        &KinematicCharacterControllerOutput,
+    )>,
+    library: Res<SpritesheetLibrary>,
+) {
+    if query.is_empty() {
+        return;
+    }
+
+    let (entity, animation, output) = query.single();
+
+    let jump = library.animation_with_name("player_jump").unwrap();
+    let air = library.animation_with_name("player_air").unwrap();
+
+    if (animation.animation_id == jump || animation.animation_id == air) && output.grounded {
+        commands.entity(entity).insert(PlayerState::Land);
     }
 }

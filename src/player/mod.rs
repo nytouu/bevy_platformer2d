@@ -24,6 +24,7 @@ enum Direction {
     Left,
 }
 
+#[allow(dead_code)]
 #[derive(Component)]
 enum PlayerState {
     Idle,
@@ -40,20 +41,22 @@ pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup_player).add_systems(
-            Update,
-            (
-                strafe,
-                jump,
-                rise,
-                fall,
-                update_direction,
-                update_sprite_direction,
-                update_animation,
-                air,
-                land,
-            )
-                .chain(),
-        );
+        app.add_systems(Startup, setup_player)
+            .add_systems(
+                Update,
+                (
+                    strafe,
+                    jump,
+                    rise,
+                    fall,
+                    land,
+                    update_direction,
+                    update_sprite_direction,
+                    update_animation,
+                    jump_to_air,
+                    land_to_idle,
+                )
+                    .chain(),
+            );
     }
 }
