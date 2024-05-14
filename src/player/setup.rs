@@ -140,6 +140,7 @@ pub fn setup_player(
 
     // spawn player
     commands.spawn((
+        Name::new("Player"),
         SpriteSheetBundle {
             texture: player,
             atlas: TextureAtlas {
@@ -152,6 +153,8 @@ pub fn setup_player(
             speed: 100.0,
             max_jump_height: 50.0,
             jump_force: 200.0,
+            max_dash_length: 100.0,
+            dash_speed: 2.0,
         },
         PlayerState::Idle,
         SpritesheetAnimation::from_id(idle_anim_id),

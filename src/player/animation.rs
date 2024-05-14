@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 use bevy_spritesheet_animation::prelude::*;
 
+use super::Direction;
 use super::*;
 
 pub fn update_animation(
@@ -128,5 +129,65 @@ pub fn land(
 
     if (animation.animation_id == jump || animation.animation_id == air) && output.grounded {
         commands.entity(entity).insert(PlayerState::Land);
+    }
+}
+
+pub fn update_sprite_direction(mut query: Query<(&mut Sprite, &Direction)>) {
+    if query.is_empty() {
+        return;
+    }
+
+    let (mut sprite, direction) = query.single_mut();
+
+    match direction {
+        Direction::Right => sprite.flip_x = true,
+        Direction::Left => sprite.flip_x = false,
+    }
+}
+
+pub fn update_dash_color(mut query: Query<&mut Sprite, With<Dash>>) {
+    if query.is_empty() {
+        return;
+    }
+
+    let mut sprite = query.single_mut();
+
+    if sprite.color != Color::BLUE {
+        sprite.color = Color::BLUE;
+    }
+}
+
+pub fn reset_dash_color(mut query: Query<&mut Sprite, Without<Dash>>) {
+    if query.is_empty() {
+        return;
+    }
+
+    let mut sprite = query.single_mut();
+
+    if sprite.color != Color::WHITE {
+        sprite.color = Color::WHITE;
+    }
+}
+
+
+pub fn post_dash(
+    mut commands: Commands,
+    query: Query<(
+        Entity,
+        &SpritesheetAnimation,
+        Option<&Dash>
+    )>,
+    library: Res<SpritesheetLibrary>,
+) {
+    if query.is_empty() {
+        return;
+    }
+
+    let (entity, animation, dashing) = query.single();
+
+    let dash = library.animation_with_name("player_dash").unwrap();
+
+    if (animation.animation_id == dash) && dashing.is_none() {
+        commands.entity(entity).insert(PlayerState::Air);
     }
 }

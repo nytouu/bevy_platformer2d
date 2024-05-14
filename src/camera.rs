@@ -4,6 +4,7 @@ use bevy_pixel_camera::{PixelCameraPlugin, PixelViewport, PixelZoom};
 use bevy::core_pipeline::{bloom::BloomSettings, tonemapping::Tonemapping};
 
 use super::player::Player;
+use super::egui::MainCamera;
 
 const LERP_FACTOR: f32 = 0.06;
 
@@ -33,6 +34,8 @@ fn setup_camera(mut commands: Commands) {
             height: 180,
         },
         PixelViewport,
+        MainCamera,
+        // PickRaycastSource,
     ));
 }
 
@@ -44,10 +47,10 @@ fn camera_follow(
         return;
     }
 
-    let transform = query.single();
-    let pos = transform.translation;
+    let player = query.single();
+    let player_position = player.translation;
 
     for mut transform in &mut cameras {
-        transform.translation = transform.translation.lerp(pos, LERP_FACTOR);
+        transform.translation = transform.translation.lerp(player_position, LERP_FACTOR);
     }
 }

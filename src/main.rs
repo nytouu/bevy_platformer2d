@@ -6,10 +6,12 @@ use bevy_spritesheet_animation::prelude::*;
 pub mod camera;
 pub mod player;
 pub mod world;
+pub mod egui;
 
 use camera::CameraPlugin;
 use player::PlayerPlugin;
 use world::WorldPlugin;
+use egui::EguiDockPlugin;
 
 #[bevy_main]
 fn main() {
@@ -20,7 +22,7 @@ fn main() {
                     primary_window: Some(Window {
                         title: "Celeste-like game thing".to_string(),
                         resolution: WindowResolution::new(1280.0, 720.0),
-                        resizable: false,
+                        resizable: true,
                         ..default()
                     }),
                     ..default()
@@ -32,6 +34,7 @@ fn main() {
             WorldPlugin,
             PlayerPlugin,
             SpritesheetAnimationPlugin,
+            EguiDockPlugin,
         ))
         .run();
 }
