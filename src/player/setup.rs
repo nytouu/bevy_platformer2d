@@ -9,8 +9,13 @@ const ANIMATION_DURATION: u32 = 60;
 
 pub fn setup_player(
     mut commands: Commands,
+    // Ressource donnée par la lib de spritesheetanimation
+    // permet de push en ressource
     mut library: ResMut<SpritesheetLibrary>,
+    // permet de spécifier le layout de la spritesheet
     mut atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+    // l'AssetServer fait le lien avec le dossier "assets" dans la racine
+    // nécessite la feature "file_watcher" de bevy dans le Cargo.toml (je crois)
     assets: Res<AssetServer>,
 ) {
     // load asset for sprite
@@ -24,6 +29,7 @@ pub fn setup_player(
         None,
     ));
 
+    // importe tout les clip pour les animations
     // run
     let run_clip_id = library.new_clip(|clip| {
         clip.push_frame_indices(Spritesheet::new(8, 8).row(0));
@@ -140,6 +146,7 @@ pub fn setup_player(
 
     // spawn player
     commands.spawn((
+        // Name permet de donner un nom a l'entitée, elle nommera l'entité dans l'inspecteur aussi
         Name::new("Player"),
         SpriteSheetBundle {
             texture: player,
@@ -149,14 +156,22 @@ pub fn setup_player(
             },
             ..Default::default()
         },
+        // player data
         Player::default(),
+        // player state
         PlayerState::Idle,
+        // current animation
         SpritesheetAnimation::from_id(idle_anim_id),
+        // player direction utilisée pour le flip du sprite
+        Direction::Right,
+        // physics
+        // colliders : https://rapier.rs/docs/user_guides/bevy_plugin/colliders
         Collider::capsule_y(4.0, 4.0),
         Damping {
             linear_damping: 1.5,
             ..Default::default()
         },
+        // rigidbodies : https://rapier.rs/docs/user_guides/bevy_plugin/rigid_bodies
         RigidBody::Dynamic,
         Velocity {
             linvel: Vec2::ZERO,
@@ -164,6 +179,5 @@ pub fn setup_player(
         },
         GravityScale(GRAVITY_SCALE),
         LockedAxes::ROTATION_LOCKED,
-        Direction::Right,
     ));
 }

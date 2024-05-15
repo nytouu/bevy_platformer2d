@@ -194,6 +194,9 @@ pub fn check_for_ground(
         return;
     }
 
+    // doc raycast :
+    // https://rapier.rs/docs/user_guides/bevy_plugin/scene_queries/#query-filters
+
     let (entity, mut player, transform) = query.single_mut();
 
     let ray_pos = Vec2::new(transform.translation.x, transform.translation.y);

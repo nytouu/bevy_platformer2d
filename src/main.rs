@@ -62,3 +62,5 @@ fn main() {
 // fn error() -> f32 {
 //     32.0;
 // }
+// - la méthode .unwrap() peut se call sur tout Option<T> afin de récupérer la valeur Some<T> si
+// elle existe, si la valeur est None alors rust panic
