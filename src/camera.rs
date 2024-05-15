@@ -5,8 +5,8 @@ use bevy_pixel_camera::{PixelCameraPlugin, PixelViewport, PixelZoom};
 
 use bevy::core_pipeline::{bloom::BloomSettings, tonemapping::Tonemapping};
 
-use super::player::Player;
 use super::egui::MainCamera;
+use super::player::Player;
 
 const LERP_FACTOR: f32 = 0.06;
 

@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
-use super::*;
 use super::Direction;
+use super::*;
 
 #[derive(Component)]
 pub struct Dash {
@@ -80,7 +80,7 @@ pub fn dash(
 
         // kb
         // input.get_pressed() renvoie un interator, on doit utiliser into_iter() pour pouvoir
-        // utiliser le keyword for 
+        // utiliser le keyword for
         for key in input.get_pressed().into_iter() {
             match key {
                 KeyCode::KeyW | KeyCode::ArrowUp => direction += Vec2::new(0.0, 1.0),

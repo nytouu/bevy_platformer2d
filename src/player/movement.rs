@@ -186,6 +186,8 @@ pub fn update_direction(mut commands: Commands, query: Query<(Entity, &Velocity)
     }
 }
 
+// doc raycast :
+// https://rapier.rs/docs/user_guides/bevy_plugin/scene_queries/#query-filters
 pub fn check_for_ground(
     mut query: Query<(Entity, &mut Player, &Transform)>,
     rapier_context: Res<RapierContext>,
@@ -193,9 +195,6 @@ pub fn check_for_ground(
     if query.is_empty() {
         return;
     }
-
-    // doc raycast :
-    // https://rapier.rs/docs/user_guides/bevy_plugin/scene_queries/#query-filters
 
     let (entity, mut player, transform) = query.single_mut();
 

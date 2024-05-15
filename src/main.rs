@@ -26,6 +26,7 @@ use world::WorldPlugin;
 fn main() {
     App::new()
         .add_plugins((
+            // default plugins est nécessaire pour avoir des trucs de bases de bevy
             DefaultPlugins
                 .set(WindowPlugin {
                     primary_window: Some(Window {
@@ -36,13 +37,16 @@ fn main() {
                     }),
                     ..default()
                 })
-                .set(ImagePlugin::default_nearest()),
+                .set(ImagePlugin::default_nearest()), // pixel svp
+            // physics engine
             RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0),
             RapierDebugRenderPlugin::default(),
+            // animations
+            SpritesheetAnimationPlugin,
+            // mes plugins
             CameraPlugin,
             WorldPlugin,
             PlayerPlugin,
-            SpritesheetAnimationPlugin,
             EguiDockPlugin,
         ))
         .run();

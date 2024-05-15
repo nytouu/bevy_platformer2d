@@ -119,6 +119,9 @@ impl Plugin for PlayerPlugin {
                 .chain(),
             // on peut déclarer plusieurs systèmes dans l'update d'un coup, on peut aussi call la
             // méthode .chain() qui permet d'executer ces systèmes dans l'ordre indiqué
+
+            // ici je n'importe pas les systèmes dans le namespace directement ça permet d'avoir
+            // animation::dash et dash::dash en même temps par exemple
         );
     }
 }
