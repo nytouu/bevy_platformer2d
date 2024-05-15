@@ -149,13 +149,7 @@ pub fn setup_player(
             },
             ..Default::default()
         },
-        Player {
-            speed: 100.0,
-            max_jump_height: 50.0,
-            jump_force: 200.0,
-            max_dash_length: 100.0,
-            dash_speed: 2.0,
-        },
+        Player::default(),
         PlayerState::Idle,
         SpritesheetAnimation::from_id(idle_anim_id),
         Collider::capsule_y(4.0, 4.0),
@@ -163,8 +157,12 @@ pub fn setup_player(
             linear_damping: 1.5,
             ..Default::default()
         },
-        RigidBody::KinematicPositionBased,
-        KinematicCharacterController::default(),
+        RigidBody::Dynamic,
+        Velocity {
+            linvel: Vec2::ZERO,
+            angvel: 0.0,
+        },
+        GravityScale(GRAVITY_SCALE),
         LockedAxes::ROTATION_LOCKED,
         Direction::Right,
     ));

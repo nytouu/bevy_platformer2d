@@ -1,3 +1,5 @@
+// pour le bloom : https://github.com/bevyengine/bevy/blob/latest/examples/2d/bloom_2d.rs
+
 use bevy::prelude::*;
 use bevy_pixel_camera::{PixelCameraPlugin, PixelViewport, PixelZoom};
 
@@ -41,12 +43,28 @@ fn setup_camera(mut commands: Commands) {
 
 fn camera_follow(
     query: Query<&Transform, With<Player>>,
+    // les query permettent de récupérer des components d'entités dans le World
+    // c'est un générique avec 2 parties :
+    // - les éléments qu'on veut query
+    // - les filtres
+    // doc des queries : https://bevy-cheatbook.github.io/programming/queries.html
     mut cameras: Query<&mut Transform, (With<Camera2d>, Without<Player>)>,
 ) {
+    // on peut gérer les queries de plusieurs manières différentes :
+    // - on peut itérer, safe car si elle est vide elle n'itère pas (mais ne crash pas), très
+    // utile quand il y a plusieurs éléments à query
+    // - on peut query.single() qui renvoie l'élément uniquement si il existe un seul élément query
+    // dans le monde, panic autrement
+    // - on peut query.single_mut() qui fait la même mais renvoie la/les ref mutable(s)
+    // - on peut query.get_single(), pareil que single mais renvoie un Option<T>, on doit alors
+    // gérer le cas ou la valeur est None, ne panic pas
+    // - on peut query.get_single_mut()
+    // - on peut faire comme ci dessous :
     if query.is_empty() {
         return;
     }
 
+    // le query.single() ne peut pas panic car on return si la query est empty
     let player = query.single();
     let player_position = player.translation;
 

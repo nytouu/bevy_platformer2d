@@ -2,89 +2,88 @@ use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 use bevy_spritesheet_animation::prelude::*;
 
+// l'enum Direction existe dans ce namespace donc je le remplace par celui que j'ai défini dans
+// player/mod.rs cet override doit être explicite, même quand on importe *
+// super fait ici réference au module supérieur, ici à player/mod.rs
+// dans la hiérarchie de rust, movement appartient à player
 use super::Direction;
 use super::*;
 
-const JOYSTICK_THRESHOLD: f32 = 0.5;
-
+/// Gauche droite bouger movement
 pub fn strafe(
+    // les boutons sont des ressources fournies par bevy, il nous suffit de les lire
     input: Res<ButtonInput<KeyCode>>,
+    // time est hyper pratique pour gérer, récup le temps dans le système
     time: Res<Time>,
+    // les manettes sont des ressources données par bevy aussi
     gamepads: Res<Gamepads>,
     button_inputs: Res<ButtonInput<GamepadButton>>,
     axes: Res<Axis<GamepadAxis>>,
     mut commands: Commands,
-    mut query: Query<
-        (
-            Entity,
-            &mut KinematicCharacterController,
-            &KinematicCharacterControllerOutput,
-            &Player,
-            &SpritesheetAnimation,
-        ),
-        Without<Dash>,
-    >,
+    mut query: Query<(Entity, &mut Velocity, &Player, &PlayerState), Without<Dash>>,
     library: Res<SpritesheetLibrary>,
 ) {
     if query.is_empty() {
         return;
     }
 
-    let (entity, mut controller, output, player, animation) = query.single_mut();
+    let (entity, mut velocity, player, state) = query.single_mut();
 
-    let mut movement = Vec2::new(0.0, 0.0);
+    // Mouvement qui sera appliqué au player après avoir process les inputs et son state
+    let mut movement: f32 = 0.0;
 
+    // doc :
+    // https://docs.rs/bevy/0.13.0/bevy/input/keyboard/enum.KeyCode.html
+    // https://bevy-cheatbook.github.io/input/keyboard.html
     if input.any_pressed([KeyCode::ArrowRight, KeyCode::KeyD]) {
-        movement.x += time.delta_seconds() * player.speed;
+        movement += time.delta_seconds() * player.speed;
     }
 
     if input.any_pressed([KeyCode::ArrowLeft, KeyCode::KeyA]) {
-        movement.x += time.delta_seconds() * player.speed * -1.0;
+        movement += time.delta_seconds() * player.speed * -1.0;
     }
 
-    if movement == Vec2::ZERO {
+    // si pas de movement clavier, on check la manette
+    // le clavier a la prio parce que why not
+    if movement == 0.0 {
+        // doc : https://bevy-cheatbook.github.io/input/gamepad.html
         for gamepad in gamepads.iter() {
             let left_stick_x = axes
                 .get(GamepadAxis::new(gamepad, GamepadAxisType::LeftStickX))
                 .unwrap();
             if left_stick_x.abs() > JOYSTICK_THRESHOLD {
-                movement.x += time.delta_seconds() * player.speed * left_stick_x;
+                movement += time.delta_seconds() * player.speed * left_stick_x;
             }
             // Dpad
             if button_inputs.pressed(GamepadButton::new(gamepad, GamepadButtonType::DPadRight)) {
-                movement.x += time.delta_seconds() * player.speed;
+                movement += time.delta_seconds() * player.speed;
             }
             if button_inputs.pressed(GamepadButton::new(gamepad, GamepadButtonType::DPadLeft)) {
-                movement.x += time.delta_seconds() * player.speed * -1.0;
+                movement += time.delta_seconds() * player.speed * -1.0;
             }
         }
     }
 
-    if output.grounded {
-        let land = library.animation_with_name("player_land").unwrap();
-
-        if movement == Vec2::ZERO {
-            if animation.animation_id != land {
+    if player.grounded {
+        if movement == 0.0 {
+            if *state != PlayerState::Land {
+                // le fait de rajouter un component déjà présent dans l'entité fait qu'elle
+                // remplace celle déjà existante
                 commands.entity(entity).insert(PlayerState::Idle);
             }
         } else {
-            if animation.animation_id != land {
+            if *state != PlayerState::Land {
                 commands.entity(entity).insert(PlayerState::Run);
             }
         }
-    }
 
-    let air_friction = 1.0;
-    // let air_friction = if output.grounded { 1.0 } else { 3.0 };
-
-    match controller.translation {
-        Some(vec) => {
-            controller.translation = Some(Vec2::new(movement.x / air_friction, vec.y));
-            // update if it already exists
-        }
-        None => {
-            controller.translation = Some(Vec2::new(movement.x / air_friction, 0.0));
-        }
+        velocity.linvel.x = movement;
+    } else {
+        velocity.linvel.x += movement / AIR_FRICTION;
+        velocity.linvel.x = velocity
+            .linvel
+            .x
+            .clamp(-player.speed / 150.0, player.speed / 100.0);
     }
 }
 
@@ -93,18 +92,15 @@ pub fn jump(
     mut commands: Commands,
     gamepads: Res<Gamepads>,
     button_inputs: Res<ButtonInput<GamepadButton>>,
-    query: Query<
-        (Entity, &KinematicCharacterControllerOutput),
-        (With<KinematicCharacterController>, Without<Jump>),
-    >,
+    query: Query<(Entity, &Player), Without<Jump>>,
 ) {
     if query.is_empty() {
         return;
     }
 
-    let (entity, output) = query.single();
+    let (entity, player) = query.single();
 
-    if input.any_pressed([KeyCode::KeyW, KeyCode::ArrowUp, KeyCode::Space]) && output.grounded {
+    if input.any_pressed([KeyCode::KeyW, KeyCode::ArrowUp, KeyCode::Space]) && player.grounded {
         commands
             .entity(entity)
             .insert(Jump(0.0))
@@ -112,7 +108,7 @@ pub fn jump(
     } else {
         for gamepad in gamepads.iter() {
             if (button_inputs.just_pressed(GamepadButton::new(gamepad, GamepadButtonType::South)))
-                && output.grounded
+                && player.grounded
             {
                 commands
                     .entity(entity)
@@ -128,23 +124,23 @@ pub fn jump_release(
     mut commands: Commands,
     gamepads: Res<Gamepads>,
     button_inputs: Res<ButtonInput<GamepadButton>>,
-    query: Query<(Entity, &KinematicCharacterControllerOutput), With<KinematicCharacterController>>,
+    query: Query<(Entity, &Player)>,
 ) {
     if query.is_empty() {
         return;
     }
 
-    let (entity, output) = query.single();
+    let (entity, player) = query.single();
 
     // TODO: add buffer, maybe using a different Jump component ?
     if input.any_just_released([KeyCode::KeyW, KeyCode::ArrowUp, KeyCode::Space])
-        && !output.grounded
+        && !player.grounded
     {
         commands.entity(entity).remove::<Jump>();
     } else {
         for gamepad in gamepads.iter() {
             if (button_inputs.just_released(GamepadButton::new(gamepad, GamepadButtonType::South)))
-                && !output.grounded
+                && !player.grounded
             {
                 commands.entity(entity).remove::<Jump>();
             };
@@ -155,231 +151,65 @@ pub fn jump_release(
 pub fn rise(
     mut commands: Commands,
     time: Res<Time>,
-    mut query: Query<(
-        Entity,
-        &mut KinematicCharacterController,
-        &mut Jump,
-        &Player,
-    )>,
+    mut query: Query<(Entity, &mut Velocity, &mut Jump, &Player)>,
 ) {
     if query.is_empty() {
         return;
     }
 
-    let (entity, mut controller, mut jump, player) = query.single_mut();
+    let (entity, mut velocity, mut jump, player) = query.single_mut();
 
-    let mut movement = time.delta().as_secs_f32() * player.jump_force;
+    let mut movement = time.delta_seconds() * player.jump_force;
 
     if movement + jump.0 >= player.max_jump_height {
         movement = player.max_jump_height - jump.0;
         commands.entity(entity).remove::<Jump>();
     }
 
-    jump.0 += movement;
+    // FIXME: i hate delta
+    jump.0 += movement / 100.0;
 
-    match controller.translation {
-        Some(vec) => controller.translation = Some(Vec2::new(vec.x, movement)),
-        None => controller.translation = Some(Vec2::new(0.0, movement)),
-    }
+    velocity.linvel.y = movement;
 }
 
-pub fn fall(
-    time: Res<Time>,
-    mut query: Query<(&mut KinematicCharacterController, &Player), (Without<Jump>, Without<Dash>)>,
-) {
+pub fn update_direction(mut commands: Commands, query: Query<(Entity, &Velocity), Without<Dash>>) {
     if query.is_empty() {
         return;
     }
 
-    let (mut controller, player) = query.single_mut();
+    let (player, velocity) = query.single();
 
-    // I am using two-thirds of the Y-velocity since I want the character to fall slower than it rises
-    let movement = time.delta().as_secs_f32() * (player.jump_force / 1.5) * -1.0;
-
-    match controller.translation {
-        Some(vec) => controller.translation = Some(Vec2::new(vec.x, movement)),
-        None => controller.translation = Some(Vec2::new(0.0, movement)),
-    }
-}
-
-pub fn update_direction(
-    mut commands: Commands,
-    query: Query<(Entity, &KinematicCharacterControllerOutput), Without<Dash>>,
-) {
-    if query.is_empty() {
-        return;
-    }
-
-    let (player, output) = query.single();
-
-    if output.desired_translation.x > 0.0 {
+    if velocity.linvel.x > 0.0 {
         commands.entity(player).insert(Direction::Right);
-    } else if output.desired_translation.x < 0.0 {
+    } else if velocity.linvel.x < 0.0 {
         commands.entity(player).insert(Direction::Left);
     }
 }
 
-pub fn dash(
-    input: Res<ButtonInput<KeyCode>>,
-    mut commands: Commands,
-    gamepads: Res<Gamepads>,
-    button_inputs: Res<ButtonInput<GamepadButton>>,
-    axes: Res<Axis<GamepadAxis>>,
-    // mouse: Res<ButtonInput<MouseButton>>,
-    query: Query<(Entity, &KinematicCharacterController), Without<Dash>>,
+pub fn check_for_ground(
+    mut query: Query<(Entity, &mut Player, &Transform)>,
+    rapier_context: Res<RapierContext>,
 ) {
     if query.is_empty() {
         return;
     }
 
-    let (entity, controller) = query.single();
+    let (entity, mut player, transform) = query.single_mut();
 
-    let mut dash: bool = false;
+    let ray_pos = Vec2::new(transform.translation.x, transform.translation.y);
+    let ray_dir = Vec2::new(0.0, -1.0);
+    let max_toi = 8.0; // INFO: should be the height of the player (collider's halfsize * 2)
+    let solid = true;
+    let filter = QueryFilter::exclude_dynamic()
+        .exclude_sensors()
+        .exclude_rigid_body(entity);
 
-    if input.any_pressed([KeyCode::ShiftLeft, KeyCode::Enter]) {
-        dash = true;
-    } else {
-        for gamepad in gamepads.iter() {
-            if button_inputs.just_pressed(GamepadButton::new(gamepad, GamepadButtonType::West)) {
-                dash = true;
-            };
-        }
-    }
-
-    // check direction
-    if dash {
-        let mut direction = Vec2::ZERO;
-
-        // kb
-        for key in input.get_pressed().into_iter() {
-            match key {
-                KeyCode::KeyW | KeyCode::ArrowUp => direction += Vec2::new(0.0, 1.0),
-                KeyCode::KeyS | KeyCode::ArrowDown => direction += Vec2::new(0.0, -1.0),
-                KeyCode::KeyA | KeyCode::ArrowLeft => direction += Vec2::new(-1.0, 0.0),
-                KeyCode::KeyD | KeyCode::ArrowRight => direction += Vec2::new(1.0, 0.0),
-                _ => {}
-            }
-        }
-
-        // gamepad
-        for gamepad in gamepads.iter() {
-            // dpad
-            if button_inputs.pressed(GamepadButton::new(gamepad, GamepadButtonType::DPadUp)) {
-                direction += Vec2::new(0.0, 1.0);
-            }
-            if button_inputs.pressed(GamepadButton::new(gamepad, GamepadButtonType::DPadDown)) {
-                direction += Vec2::new(0.0, -1.0);
-            }
-            if button_inputs.pressed(GamepadButton::new(gamepad, GamepadButtonType::DPadLeft)) {
-                direction += Vec2::new(-1.0, 0.0);
-            }
-            if button_inputs.pressed(GamepadButton::new(gamepad, GamepadButtonType::DPadRight)) {
-                direction += Vec2::new(1.0, 0.0);
-            }
-
-            // joystick
-            let left_stick_x = axes
-                .get(GamepadAxis::new(gamepad, GamepadAxisType::LeftStickX))
-                .unwrap();
-            if left_stick_x.abs() > JOYSTICK_THRESHOLD {
-                direction.x += if left_stick_x > 0.0 { 1.0 } else { -1.0 };
-            }
-            let left_stick_y = axes
-                .get(GamepadAxis::new(gamepad, GamepadAxisType::LeftStickY))
-                .unwrap();
-            if left_stick_y.abs() > JOYSTICK_THRESHOLD {
-                direction.y += if left_stick_y > 0.0 { 1.0 } else { -1.0 };
-            }
-        }
-
-        let dash_direction: Option<DashDirection>;
-        match direction {
-            Vec2 { x, y } if x > 0.0 && y == 0.0 => {
-                dash_direction = Some(DashDirection::East);
-            }
-            Vec2 { x, y } if x < 0.0 && y == 0.0 => {
-                dash_direction = Some(DashDirection::West);
-            }
-            Vec2 { x, y } if x == 0.0 && y > 0.0 => {
-                dash_direction = Some(DashDirection::North);
-            }
-            Vec2 { x, y } if x == 0.0 && y < 0.0 => {
-                dash_direction = Some(DashDirection::South);
-            }
-            Vec2 { x, y } if x > 0.0 && y > 0.0 => {
-                dash_direction = Some(DashDirection::NorthEast);
-            }
-            Vec2 { x, y } if x > 0.0 && y < 0.0 => {
-                dash_direction = Some(DashDirection::SouthEast);
-            }
-            Vec2 { x, y } if x < 0.0 && y > 0.0 => {
-                dash_direction = Some(DashDirection::NorthWest);
-            }
-            Vec2 { x, y } if x < 0.0 && y < 0.0 => {
-                dash_direction = Some(DashDirection::SouthWest);
-            }
-            _ => dash_direction = None,
-        }
-
-        if dash_direction.is_some() {
-            let direction = dash_direction.unwrap();
-
-            if direction.get_direction().is_some() {
-                commands
-                    .entity(entity)
-                    .insert(direction.get_direction().unwrap());
-            }
-            commands
-                .entity(entity)
-                .remove::<Jump>()
-                .insert(PlayerState::Dash)
-                .insert(Dash {
-                    initial_position: controller.translation.unwrap(),
-                    value: 0.0,
-                    direction
-                });
-        }
-    }
-}
-
-pub fn dashing(
-    mut query: Query<(
-        Entity,
-        &mut KinematicCharacterController,
-        &Player,
-        &mut Dash,
-    )>,
-    mut commands: Commands,
-) {
-    if query.is_empty() {
-        return;
-    }
-
-    let (entity, mut controller, player, mut dash) = query.single_mut();
-
-    let movement = match dash.direction {
-        DashDirection::North => Vec2::new(0.0, 1.0),
-        DashDirection::South => Vec2::new(0.0, -1.0),
-        DashDirection::West => Vec2::new(-1.0, 0.0),
-        DashDirection::East => Vec2::new(1.0, 0.0),
-        DashDirection::NorthWest => Vec2::new(-1.0, 1.0).normalize(),
-        DashDirection::NorthEast => Vec2::new(1.0, 1.0).normalize(),
-        DashDirection::SouthWest => Vec2::new(-1.0, -1.0).normalize(),
-        DashDirection::SouthEast => Vec2::new(1.0, -1.0).normalize(),
-    };
-
-    if dash
-        .initial_position
-        .distance(dash.initial_position * movement * player.max_dash_length)
-        >= player.max_dash_length / 100.0
+    if rapier_context
+        .cast_ray(ray_pos, ray_dir, max_toi, solid, filter)
+        .is_some()
     {
-        // movement = player.max_dash_length - dash.value;
-        commands
-            .entity(entity)
-            .remove::<Dash>();
+        player.grounded = true;
+    } else {
+        player.grounded = false;
     }
-
-    dash.value += player.dash_speed;
-
-    controller.translation = Some(movement * player.dash_speed)
 }

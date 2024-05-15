@@ -1,3 +1,9 @@
+// code utilisé :
+// https://github.com/jakobhellermann/bevy-inspector-egui/blob/main/crates/bevy-inspector-egui/examples/integrations/egui_dock.rs
+
+// doc du plugin en question permenttant d'avoir l'inspecteur :
+// https://docs.rs/bevy-inspector-egui/0.24.0/bevy_inspector_egui/index.html
+
 use std::any::TypeId;
 
 use bevy::asset::{ReflectAsset, UntypedAssetId};
@@ -263,8 +269,8 @@ fn draw_gizmo(
 ) {
     if let Ok((cam_transform, projection)) = world
         .query_filtered::<(&GlobalTransform, &Projection), With<MainCamera>>()
-        .get_single(world) {
-
+        .get_single(world)
+    {
         let view_matrix = Mat4::from(cam_transform.affine().inverse());
         let projection_matrix = projection.get_projection_matrix();
 

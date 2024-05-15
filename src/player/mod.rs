@@ -1,18 +1,70 @@
+// le nom de fichier "mod.rs" est spécial dans rust
+// lorsque dans le fichier main.rs j'indique :
+// mod player;
+// rust cherche les fichiers ./player.rs OU ./player/mod.rs
+// ça me permet de mettre plusieurs fichiers dans le dossier player tout en pouvant importer le
+// "player" directement
+
 use bevy::prelude::*;
+
+mod dash;
+use dash::Dash;
 
 mod animation;
 mod movement;
 mod setup;
 
+// pub car on veut y avoir accès dans les autres modules du player
+pub const AIR_FRICTION: f32 = 50.0;
+pub const JOYSTICK_THRESHOLD: f32 = 0.5;
+pub const GRAVITY_SCALE: f32 = 0.8;
+
+// la macro derive permet d'implémenter les trait indiqué
+// pour les components bevy il faut utiliser cette macro
+// doc : https://bevy-cheatbook.github.io/programming/ec.html#components
+/// Data associée au player
 #[derive(Component)]
 pub struct Player {
     speed: f32,
-    max_jump_height: f32,
-    max_dash_length: f32,
+    grounded: bool,
+
     jump_force: f32,
+    max_jump_height: f32,
+
     dash_speed: f32,
+    dash_max_time: f32,
+    dash_reset_time: f32,
 }
 
+// le trait default permet d'instancier un objet avec des valeurs par défaut défini au compile-time
+// c'est comme un "new" mais avec des valeurs par défaut
+// un autre avantage d'implémenter default est de pouvoir déclarer des valeurs qui changent et de
+// garder des valeurs par default :
+// let player_1 = Player::default();
+// let player_2 = Player {
+//     speed: 50000.0,
+//     jump_force: 30000.0,
+//     ..Default::default(),
+// }
+impl Default for Player {
+    fn default() -> Self {
+        Player {
+            speed: 20000.0,
+            grounded: false,
+
+            max_jump_height: 200.0,
+            jump_force: 20000.0,
+
+            dash_speed: 200.0,
+            dash_max_time: 0.3,
+            dash_reset_time: 2.0,
+        }
+    }
+}
+
+// les structs peuvent être des "units", des "tuples" ou des structs avec des membres
+// doc : https://doc.rust-lang.org/rust-by-example/custom_types/structs.html
+// ici la le float du Jump correspond a sa hauteur
 #[derive(Component)]
 struct Jump(f32);
 
@@ -22,39 +74,11 @@ enum Direction {
     Left,
 }
 
-enum DashDirection {
-    North,
-    South,
-    West,
-    East,
-    NorthWest,
-    NorthEast,
-    SouthWest,
-    SouthEast,
-}
-
-#[derive(Component)]
-struct Dash {
-    pub initial_position: Vec2,
-    pub value: f32,
-    pub direction: DashDirection,
-}
-
-impl DashDirection {
-    fn get_direction(&self) -> Option<Direction> {
-        match self {
-            // keep same direction
-            DashDirection::North | DashDirection::South => None,
-
-            // handle direction change
-            DashDirection::West | DashDirection::NorthWest | DashDirection::SouthWest => Some(Direction::Left),
-            DashDirection::East | DashDirection::NorthEast | DashDirection::SouthEast => Some(Direction::Right),
-        }
-    }
-}
-
+// la macro allow permet d'autoriser certaines choses que le compilateur n'aime/n'autorise pas
+// ici on enlève les warnings pour les membres non utilisés
 #[allow(dead_code)]
-#[derive(Component)]
+// ici on dérive en plus de PartialEq et Eq pour pouvoir faire des comparaisons sur notre enum
+#[derive(Component, PartialEq, Eq)]
 enum PlayerState {
     Idle,
     Run,
@@ -74,15 +98,14 @@ impl Plugin for PlayerPlugin {
             Update,
             (
                 // physics
+                movement::check_for_ground,
                 movement::strafe,
                 movement::jump,
                 movement::jump_release,
                 movement::rise,
-                movement::fall,
-                movement::dash,
-                movement::dashing,
+                dash::dash,
+                dash::dashing,
                 movement::update_direction,
-
                 // animation
                 animation::land,
                 animation::update_sprite_direction,
@@ -94,6 +117,8 @@ impl Plugin for PlayerPlugin {
                 animation::post_dash,
             )
                 .chain(),
+            // on peut déclarer plusieurs systèmes dans l'update d'un coup, on peut aussi call la
+            // méthode .chain() qui permet d'executer ces systèmes dans l'ordre indiqué
         );
     }
 }
