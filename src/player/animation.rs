@@ -4,6 +4,9 @@ use bevy_spritesheet_animation::prelude::*;
 use super::Direction;
 use super::*;
 
+use super::dash::DashCooldown;
+use super::dash::DashTrail;
+
 pub fn update_animation(
     mut query: Query<(&mut SpritesheetAnimation, &PlayerState)>,
     library: Res<SpritesheetLibrary>,
@@ -137,11 +140,11 @@ pub fn update_sprite_direction(mut query: Query<(&mut Sprite, &Direction)>) {
         return;
     }
 
-    let (mut sprite, direction) = query.single_mut();
-
-    match direction {
-        Direction::Right => sprite.flip_x = true,
-        Direction::Left => sprite.flip_x = false,
+    for (mut sprite, direction) in &mut query {
+        match direction {
+            Direction::Right => sprite.flip_x = true,
+            Direction::Left => sprite.flip_x = false,
+        }
     }
 }
 
@@ -159,7 +162,9 @@ pub fn update_dash_color(mut query: Query<&mut Sprite, With<Dash>>) {
 }
 
 /// Reset la couleur du dash après celui ci
-pub fn reset_dash_color(mut query: Query<&mut Sprite, Without<Dash>>) {
+pub fn reset_dash_color(
+    mut query: Query<&mut Sprite, (Without<Dash>, Without<DashCooldown>, Without<DashTrail>)>,
+) {
     if query.is_empty() {
         return;
     }

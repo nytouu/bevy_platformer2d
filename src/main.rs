@@ -35,9 +35,13 @@ fn main() {
                         resizable: true,
                         ..default()
                     }),
-                    ..default()
+                    ..Default::default()
                 })
-                .set(ImagePlugin::default_nearest()), // pixel svp
+                .set(ImagePlugin::default_nearest())
+                .set(AssetPlugin {
+                    watch_for_changes_override: Some(true),
+                    ..Default::default()
+                }),
             // physics engine
             RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0),
             RapierDebugRenderPlugin::default(),

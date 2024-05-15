@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
-use bevy_spritesheet_animation::prelude::*;
 
 // l'enum Direction existe dans ce namespace donc je le remplace par celui que j'ai défini dans
 // player/mod.rs cet override doit être explicite, même quand on importe *
@@ -8,6 +7,11 @@ use bevy_spritesheet_animation::prelude::*;
 // dans la hiérarchie de rust, movement appartient à player
 use super::Direction;
 use super::*;
+
+const BUFFER_TIME: f32 = 0.1;
+
+#[derive(Component, Default)]
+pub struct JumpBuffer(f32);
 
 /// Gauche droite bouger movement
 pub fn strafe(
@@ -21,7 +25,6 @@ pub fn strafe(
     axes: Res<Axis<GamepadAxis>>,
     mut commands: Commands,
     mut query: Query<(Entity, &mut Velocity, &Player, &PlayerState), Without<Dash>>,
-    library: Res<SpritesheetLibrary>,
 ) {
     if query.is_empty() {
         return;
@@ -79,11 +82,13 @@ pub fn strafe(
 
         velocity.linvel.x = movement;
     } else {
-        velocity.linvel.x += movement / AIR_FRICTION;
-        velocity.linvel.x = velocity
-            .linvel
-            .x
-            .clamp(-player.speed / 150.0, player.speed / 100.0);
+        if movement != 0.0 {
+            velocity.linvel.x += movement / AIR_FRICTION;
+            velocity.linvel.x = velocity
+                .linvel
+                .x
+                .clamp(-player.speed / 175.0, player.speed / 175.0);
+        }
     }
 }
 
@@ -92,30 +97,77 @@ pub fn jump(
     mut commands: Commands,
     gamepads: Res<Gamepads>,
     button_inputs: Res<ButtonInput<GamepadButton>>,
-    query: Query<(Entity, &Player), Without<Jump>>,
+    query: Query<(Entity, &Player, Option<&Dash>), Without<Jump>>,
 ) {
     if query.is_empty() {
         return;
     }
 
-    let (entity, player) = query.single();
+    let (entity, player, dash) = query.single();
 
-    if input.any_pressed([KeyCode::KeyW, KeyCode::ArrowUp, KeyCode::Space]) && player.grounded {
+    let mut jump = false;
+
+    if input.any_just_pressed([KeyCode::KeyW, KeyCode::ArrowUp, KeyCode::Space]) {
+        if player.grounded {
+            jump = true;
+        } else {
+            commands.entity(entity).insert(JumpBuffer::default());
+        }
+    } else {
+        for gamepad in gamepads.iter() {
+            if button_inputs.just_pressed(GamepadButton::new(gamepad, GamepadButtonType::South)) {
+                if player.grounded {
+                    jump = true;
+                } else {
+                    commands.entity(entity).insert(JumpBuffer::default());
+                }
+            };
+        }
+    }
+
+    if jump && dash.is_none() {
         commands
             .entity(entity)
             .insert(Jump(0.0))
             .insert(PlayerState::Jump);
-    } else {
-        for gamepad in gamepads.iter() {
-            if (button_inputs.just_pressed(GamepadButton::new(gamepad, GamepadButtonType::South)))
-                && player.grounded
-            {
-                commands
-                    .entity(entity)
-                    .insert(Jump(0.0))
-                    .insert(PlayerState::Jump);
-            };
-        }
+    } else if jump && dash.is_some() {
+        commands
+            .entity(entity)
+            .insert(Jump(0.0))
+            .insert(PlayerState::Jump)
+            .remove::<Dash>();
+    }
+}
+
+pub fn jump_buffer(mut commands: Commands, query: Query<(Entity, &Player), With<JumpBuffer>>) {
+    if query.is_empty() {
+        return;
+    }
+
+    let (entity, player) = query.single();
+    if player.grounded {
+        commands
+            .entity(entity)
+            .insert(Jump(0.0))
+            .insert(PlayerState::Jump);
+    }
+}
+
+pub fn remove_buffer(
+    mut commands: Commands,
+    mut query: Query<(Entity, &mut JumpBuffer)>,
+    time: Res<Time>,
+) {
+    if query.is_empty() {
+        return;
+    }
+
+    let (entity, mut jump_buffer) = query.single_mut();
+
+    jump_buffer.0 += time.delta_seconds();
+
+    if jump_buffer.0 >= BUFFER_TIME {
+        commands.entity(entity).remove::<JumpBuffer>();
     }
 }
 
@@ -136,7 +188,10 @@ pub fn jump_release(
     if input.any_just_released([KeyCode::KeyW, KeyCode::ArrowUp, KeyCode::Space])
         && !player.grounded
     {
-        commands.entity(entity).remove::<Jump>();
+        commands
+            .entity(entity)
+            .remove::<Jump>()
+            .remove::<JumpBuffer>();
     } else {
         for gamepad in gamepads.iter() {
             if (button_inputs.just_released(GamepadButton::new(gamepad, GamepadButtonType::South)))

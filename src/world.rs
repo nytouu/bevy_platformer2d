@@ -23,7 +23,7 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    let size = Vec2::new(1000.0, 5.0);
+    let size = Vec2::new(300.0, 5.0);
     // on peut faire spawn une entités avec la méthode spawn
     // elle prend un seul argument, un "Bundle" qui peut être soit un component seul, ou une
     // collection de components

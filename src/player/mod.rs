@@ -23,6 +23,7 @@ pub const GRAVITY_SCALE: f32 = 0.8;
 // pour les components bevy il faut utiliser cette macro
 // doc : https://bevy-cheatbook.github.io/programming/ec.html#components
 /// Data associée au player
+#[allow(dead_code)]
 #[derive(Component)]
 pub struct Player {
     speed: f32,
@@ -55,9 +56,9 @@ impl Default for Player {
             max_jump_height: 200.0,
             jump_force: 20000.0,
 
-            dash_speed: 200.0,
-            dash_max_time: 0.3,
-            dash_reset_time: 2.0,
+            dash_speed: 250.0,
+            dash_max_time: 0.2,
+            dash_reset_time: 1.0,
         }
     }
 }
@@ -68,7 +69,7 @@ impl Default for Player {
 #[derive(Component)]
 struct Jump(f32);
 
-#[derive(Component)]
+#[derive(Component, Clone)]
 enum Direction {
     Right,
     Left,
@@ -99,6 +100,7 @@ impl Plugin for PlayerPlugin {
             (
                 // physics
                 movement::check_for_ground,
+                dash::dash_cooldown,
                 movement::strafe,
                 movement::jump,
                 movement::jump_release,
@@ -106,6 +108,14 @@ impl Plugin for PlayerPlugin {
                 dash::dash,
                 dash::dashing,
                 movement::update_direction,
+                movement::remove_buffer,
+                movement::jump_buffer,
+            )
+                .chain(),
+        );
+        app.add_systems(
+            PostUpdate,
+            (
                 // animation
                 animation::land,
                 animation::update_sprite_direction,
@@ -115,6 +125,8 @@ impl Plugin for PlayerPlugin {
                 animation::update_dash_color,
                 animation::reset_dash_color,
                 animation::post_dash,
+                dash::spawn_dash_trail,
+                dash::fade_out_trail,
             )
                 .chain(),
             // on peut déclarer plusieurs systèmes dans l'update d'un coup, on peut aussi call la

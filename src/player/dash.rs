@@ -4,11 +4,25 @@ use bevy_rapier2d::prelude::*;
 use super::Direction;
 use super::*;
 
+/// Contrôle la fréquence de spawn des silhouettes de dash
+/// Plus la valeur est haute moins les silhouettes sont fréquentes
+const TRAIL_FREQUENCY: usize = 7;
+
+/// Valeur de réduction de l'alpha des silhouettes
+/// Plus la valeur est haute plus les silhouettes restent longtemps
+const ALPHA_DECREMENT: f32 = 0.04;
+
 #[derive(Component)]
 pub struct Dash {
     pub elapsed: f32,
     pub direction: DashDirection,
 }
+
+#[derive(Component, Default)]
+pub struct DashCooldown(f32);
+
+#[derive(Component)]
+pub struct DashTrail;
 
 impl Dash {
     pub fn new(direction: DashDirection) -> Dash {
@@ -54,7 +68,7 @@ pub fn dash(
     button_inputs: Res<ButtonInput<GamepadButton>>,
     axes: Res<Axis<GamepadAxis>>,
     // mouse: Res<ButtonInput<MouseButton>>,
-    query: Query<Entity, (Without<Dash>, With<Player>)>,
+    query: Query<Entity, (Without<Dash>, Without<DashCooldown>, With<Player>)>,
 ) {
     if query.is_empty() {
         return;
@@ -160,7 +174,6 @@ pub fn dash(
                     .entity(entity)
                     .insert(direction.get_direction().unwrap());
             }
-            info!("dash");
             commands
                 .entity(entity)
                 .remove::<Jump>()
@@ -197,9 +210,79 @@ pub fn dashing(
         commands
             .entity(entity)
             .remove::<Dash>()
+            .insert(DashCooldown::default())
             .insert(GravityScale(GRAVITY_SCALE));
     } else {
         dash.elapsed += time.delta_seconds();
         velocity.linvel = movement * player.dash_speed;
+    }
+}
+
+pub fn dash_cooldown(
+    mut query: Query<(Entity, &mut DashCooldown, &Player), Without<Dash>>,
+    mut commands: Commands,
+    time: Res<Time>,
+) {
+    if query.is_empty() {
+        return;
+    }
+
+    let (entity, mut cooldown, player) = query.single_mut();
+
+    cooldown.0 += time.delta_seconds();
+    if cooldown.0 > player.dash_reset_time {
+        commands.entity(entity).remove::<DashCooldown>();
+    }
+}
+
+pub fn spawn_dash_trail(
+    query: Query<(&Transform, &Dash, &Direction)>,
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+) {
+    if query.is_empty() {
+        return;
+    }
+
+    let (transform, dash, direction) = query.single();
+
+    info!(
+        "elapsed : {}, elapsed mod freq {}",
+        dash.elapsed,
+        (dash.elapsed * 100.0) as usize % TRAIL_FREQUENCY
+    );
+    if (dash.elapsed * 100.0) as usize % TRAIL_FREQUENCY == 0 {
+        commands.spawn((
+            SpriteBundle {
+                transform: Transform {
+                    translation: Vec3::new(transform.translation.x, transform.translation.y, -1.0),
+                    ..Default::default()
+                },
+                texture: asset_server.load("player_dash.png"),
+                ..Default::default()
+            },
+            DashTrail,
+            direction.clone(),
+        ));
+    }
+}
+
+pub fn fade_out_trail(
+    mut query: Query<(Entity, &mut Sprite), With<DashTrail>>,
+    mut commands: Commands,
+) {
+    if query.is_empty() {
+        return;
+    }
+
+    for (entity, mut sprite) in &mut query {
+        let mut alpha = sprite.color.a();
+        alpha -= ALPHA_DECREMENT;
+
+        if alpha <= 0.0 {
+            commands.entity(entity).despawn();
+        } else {
+            sprite.color = Color::rgba(0.0, 0.0, 1.0, alpha);
+        }
     }
 }
