@@ -131,7 +131,7 @@ pub fn setup_player(
 
     // dash
     let dash_clip_id = library.new_clip(|clip| {
-        clip.push_frame_indices(Spritesheet::new(8, 8).horizontal_strip(0, 7, 1));
+        clip.push_frame_indices(Spritesheet::new(8, 8).horizontal_strip(0, 7, 6));
     });
 
     let dash_anim_id = library.new_animation(|animation| {

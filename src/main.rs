@@ -13,6 +13,7 @@ mod player;
 mod world;
 mod config;
 mod editor;
+mod tile;
 
 // on spécifie ce qu'on importe dans le namespace
 use camera::CameraPlugin;
@@ -20,6 +21,7 @@ use player::PlayerPlugin;
 use world::WorldPlugin;
 use config::ConfigPlugin;
 use editor::PlsEditorPlugin;
+use tile::TileWorldPlugin;
 
 // les #[bonjour] sont des macros, celle-ci précise le point d'entrée du programme a bevy
 // je sais pas si c'est utile mais la doc m'a dit de le mettre
@@ -37,6 +39,7 @@ fn main() {
             // mes plugins
             CameraPlugin,
             WorldPlugin,
+            TileWorldPlugin,
             PlayerPlugin,
             PlsEditorPlugin,
         ))

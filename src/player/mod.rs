@@ -24,7 +24,7 @@ pub const GRAVITY_SCALE: f32 = 0.8;
 // doc : https://bevy-cheatbook.github.io/programming/ec.html#components
 /// Data associée au player
 #[allow(dead_code)]
-#[derive(Component)]
+#[derive(Component, Reflect)]
 pub struct Player {
     speed: f32,
     grounded: bool,
@@ -66,10 +66,10 @@ impl Default for Player {
 // les structs peuvent être des "units", des "tuples" ou des structs avec des membres
 // doc : https://doc.rust-lang.org/rust-by-example/custom_types/structs.html
 // ici la le float du Jump correspond a sa hauteur
-#[derive(Component)]
+#[derive(Component, Reflect)]
 struct Jump(f32);
 
-#[derive(Component, Clone)]
+#[derive(Component, Clone, Reflect)]
 enum Direction {
     Right,
     Left,
@@ -79,7 +79,7 @@ enum Direction {
 // ici on enlève les warnings pour les membres non utilisés
 #[allow(dead_code)]
 // ici on dérive en plus de PartialEq et Eq pour pouvoir faire des comparaisons sur notre enum
-#[derive(Component, PartialEq, Eq)]
+#[derive(Component, PartialEq, Eq, Reflect)]
 enum PlayerState {
     Idle,
     Run,
@@ -135,5 +135,9 @@ impl Plugin for PlayerPlugin {
             // ici je n'importe pas les systèmes dans le namespace directement ça permet d'avoir
             // animation::dash et dash::dash en même temps par exemple
         );
+        app.register_type::<Player>()
+            .register_type::<PlayerState>()
+            .register_type::<Jump>()
+            .register_type::<Direction>();
     }
 }

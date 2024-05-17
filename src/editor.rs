@@ -8,8 +8,8 @@ pub struct PlsEditorPlugin;
 
 impl Plugin for PlsEditorPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(EditorPlugin::default())
-            .insert_resource(editor_controls());
+        app.add_plugins(EditorPlugin::default());
+            // .insert_resource(editor_controls());
     }
 }
 

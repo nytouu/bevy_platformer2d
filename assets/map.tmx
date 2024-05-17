@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.10.2" orientation="orthogonal" renderorder="right-down" width="20" height="11" tilewidth="16" tileheight="16" infinite="0" nextlayerid="4" nextobjectid="6">
+ <tileset firstgid="1" name="tilesex" tilewidth="16" tileheight="16" tilecount="9" columns="3">
+  <image source="../../MARIO_LIKE/assets/imgs/placeholder.png" width="48" height="48"/>
+  <tile id="1">
+   <properties>
+    <property name="isSolid" type="bool" value="true"/>
+   </properties>
+  </tile>
+ </tileset>
+ <layer id="1" name="tiles" width="20" height="11">
+  <data encoding="csv">
+1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,1,1,1,2,0,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,1,1,1,2,0,1,1,0,0,0,0,0,
+1,1,2,2,2,2,1,1,1,1,1,2,0,0,1,0,1,1,1,1,
+1,1,1,1,1,1,1,1,1,1,1,2,0,0,1,2,2,2,2,2,
+1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,2,1,1,1,1,
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,
+1,1,1,1,1,2,2,2,1,1,1,2,2,2,2,2,1,1,1,1,
+2,2,2,1,1,2,1,2,1,1,1,2,1,1,1,1,1,1,1,1
+</data>
+ </layer>
+ <objectgroup id="3" name="orbs"/>
+ <objectgroup id="2" name="spikes">
+  <object id="1" gid="5" x="160" y="176" width="16" height="16">
+   <properties>
+    <property name="direction" value="up"/>
+   </properties>
+  </object>
+  <object id="2" gid="5" x="144" y="176" width="16" height="16">
+   <properties>
+    <property name="direction" value="up"/>
+   </properties>
+  </object>
+  <object id="3" gid="5" x="128" y="176" width="16" height="16">
+   <properties>
+    <property name="direction" value="up"/>
+   </properties>
+  </object>
+  <object id="4" gid="5" x="64" y="176" width="16" height="16">
+   <properties>
+    <property name="direction" value="up"/>
+   </properties>
+  </object>
+  <object id="5" gid="5" x="48" y="176" width="16" height="16">
+   <properties>
+    <property name="direction" value="up"/>
+   </properties>
+  </object>
+ </objectgroup>
+</map>

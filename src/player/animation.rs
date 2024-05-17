@@ -4,6 +4,7 @@ use bevy_spritesheet_animation::prelude::*;
 use crate::player::{*, Direction};
 use crate::player::dash::{DashCooldown, DashTrail};
 
+/// Change l'animation en fonction du state du joueur
 pub fn update_animation(
     mut query: Query<(&mut SpritesheetAnimation, &PlayerState)>,
     library: Res<SpritesheetLibrary>,
