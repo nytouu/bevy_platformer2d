@@ -6,17 +6,17 @@ use bevy::window::WindowResolution;
 // on fait la même avec le moteur physique
 use bevy_rapier2d::prelude::*;
 // idem avec la crate (package rust) qui gère les animations
+use bevy_editor_pls::prelude::*;
+// https://github.com/jakobhellermann/bevy_editor_pls
 use bevy_spritesheet_animation::prelude::*;
 
 // on importe nos modules (fichiers rust)
 pub mod camera;
-pub mod egui;
 pub mod player;
 pub mod world;
 
 // on spécifie ce qu'on importe dans le namespace
 use camera::CameraPlugin;
-use egui::EguiDockPlugin;
 use player::PlayerPlugin;
 use world::WorldPlugin;
 
@@ -51,7 +51,7 @@ fn main() {
             CameraPlugin,
             WorldPlugin,
             PlayerPlugin,
-            EguiDockPlugin,
+            EditorPlugin::default(),
         ))
         .run();
 }
@@ -70,5 +70,5 @@ fn main() {
 // fn error() -> f32 {
 //     32.0;
 // }
-// - la méthode .unwrap() peut se call sur tout Option<T> afin de récupérer la valeur Some<T> si
+// - la méthode .unwrap() peut se call sur tout Option<T> ou Result<T, E> afin de récupérer la valeur Some(T) ou Ok(T) si
 // elle existe, si la valeur est None alors rust panic

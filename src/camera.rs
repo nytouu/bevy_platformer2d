@@ -5,7 +5,6 @@ use bevy_pixel_camera::{PixelCameraPlugin, PixelViewport, PixelZoom};
 
 use bevy::core_pipeline::{bloom::BloomSettings, tonemapping::Tonemapping};
 
-use super::egui::MainCamera;
 use crate::player::Player;
 
 const LERP_FACTOR: f32 = 0.06;
@@ -19,6 +18,9 @@ impl Plugin for CameraPlugin {
             .add_systems(PostUpdate, camera_follow);
     }
 }
+
+#[derive(Component)]
+pub struct PlayerCamera;
 
 fn setup_camera(mut commands: Commands) {
     commands.spawn((
@@ -36,7 +38,7 @@ fn setup_camera(mut commands: Commands) {
             height: 180,
         },
         PixelViewport,
-        MainCamera,
+        PlayerCamera,
         // PickRaycastSource,
     ));
 }
@@ -48,7 +50,7 @@ fn camera_follow(
     // - les éléments qu'on veut query
     // - les filtres
     // doc des queries : https://bevy-cheatbook.github.io/programming/queries.html
-    mut cameras: Query<&mut Transform, (With<Camera2d>, Without<Player>)>,
+    mut camera: Query<&mut Transform, (With<PlayerCamera>, Without<Player>)>,
 ) {
     // on peut gérer les queries de plusieurs manières différentes :
     // - on peut itérer, safe car si elle est vide elle n'itère pas (mais ne crash pas), très
@@ -68,7 +70,6 @@ fn camera_follow(
     let player = query.single();
     let player_position = player.translation;
 
-    for mut transform in &mut cameras {
-        transform.translation = transform.translation.lerp(player_position, LERP_FACTOR);
-    }
+    let mut transform = camera.single_mut();
+    transform.translation = transform.translation.lerp(player_position, LERP_FACTOR);
 }
