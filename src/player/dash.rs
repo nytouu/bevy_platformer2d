@@ -1,8 +1,7 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
-use super::Direction;
-use super::*;
+use crate::player::{*, Direction};
 
 /// Contrôle la fréquence de spawn des silhouettes de dash
 /// Plus la valeur est haute moins les silhouettes sont fréquentes

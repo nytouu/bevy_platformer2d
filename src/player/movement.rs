@@ -5,8 +5,7 @@ use bevy_rapier2d::prelude::*;
 // player/mod.rs cet override doit être explicite, même quand on importe *
 // super fait ici réference au module supérieur, ici à player/mod.rs
 // dans la hiérarchie de rust, movement appartient à player
-use super::Direction;
-use super::*;
+use crate::player::{*, Direction};
 
 const BUFFER_TIME: f32 = 0.1;
 

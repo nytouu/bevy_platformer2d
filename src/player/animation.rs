@@ -1,11 +1,8 @@
 use bevy::prelude::*;
 use bevy_spritesheet_animation::prelude::*;
 
-use super::Direction;
-use super::*;
-
-use super::dash::DashCooldown;
-use super::dash::DashTrail;
+use crate::player::{*, Direction};
+use crate::player::dash::{DashCooldown, DashTrail};
 
 pub fn update_animation(
     mut query: Query<(&mut SpritesheetAnimation, &PlayerState)>,
