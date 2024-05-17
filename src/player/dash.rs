@@ -245,11 +245,6 @@ pub fn spawn_dash_trail(
 
     let (transform, dash, direction) = query.single();
 
-    info!(
-        "elapsed : {}, elapsed mod freq {}",
-        dash.elapsed,
-        (dash.elapsed * 100.0) as usize % TRAIL_FREQUENCY
-    );
     if (dash.elapsed * 100.0) as usize % TRAIL_FREQUENCY == 0 {
         commands.spawn((
             SpriteBundle {

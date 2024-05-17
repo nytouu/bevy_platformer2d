@@ -183,7 +183,6 @@ pub fn jump_release(
 
     let (entity, player) = query.single();
 
-    // TODO: add buffer, maybe using a different Jump component ?
     if input.any_just_released([KeyCode::KeyW, KeyCode::ArrowUp, KeyCode::Space])
         && !player.grounded
     {
