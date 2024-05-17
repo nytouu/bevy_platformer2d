@@ -176,6 +176,7 @@ pub fn setup_player(
             linvel: Vec2::ZERO,
             angvel: 0.0,
         },
+        Ccd::enabled(),
         GravityScale(GRAVITY_SCALE),
         LockedAxes::ROTATION_LOCKED,
     ));
